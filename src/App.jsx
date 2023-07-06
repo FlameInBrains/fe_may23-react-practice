@@ -1,5 +1,5 @@
 /* eslint-disable jsx-a11y/accessible-emoji */
-import React, { useState } from 'react';
+import React, { useState, Fragment } from 'react';
 import './App.scss';
 
 import classNames from 'classnames';
@@ -16,12 +16,20 @@ function getUserByOwnerId(ownerId) {
   return usersFromServer.find(user => user.id === ownerId) || null;
 }
 
-function getFilteredByOwner(goods, { owner }) {
+function getFilteredByOwner(goods, { owner, query }) {
+  let preparedProducts = goods.filter(good => good.owner.name === owner);
+
   if (owner === 'All') {
-    return goods;
+    preparedProducts = [...goods];
   }
 
-  return goods.filter(good => good.owner.name === owner);
+  if (query) {
+    return preparedProducts.filter(good => good.name
+      .toLowerCase()
+      .includes(query.toLowerCase()));
+  }
+
+  return preparedProducts;
 }
 
 const products = productsFromServer.map(product => ({
@@ -31,8 +39,9 @@ const products = productsFromServer.map(product => ({
 }));
 
 export const App = () => {
+  const [query, setQuery] = useState('');
   const [owner, setOwner] = useState('All');
-  const visibleProducts = getFilteredByOwner(products, { owner });
+  const visibleProducts = getFilteredByOwner(products, { owner, query });
 
   return (
     <div className="section">
@@ -54,8 +63,9 @@ export const App = () => {
               </a>
               {usersFromServer.map(user => (
                 <a
+                  key={user.id}
                   onClick={() => setOwner(user.name)}
-                  data-cy="FilterAllUsers"
+                  data-cy="FilterUser"
                   href="#/"
                   className={classNames(null,
                     { 'is-active': owner === user.name })}
@@ -69,10 +79,15 @@ export const App = () => {
               <p className="control has-icons-left has-icons-right">
                 <input
                   data-cy="SearchField"
+                  value={query}
+                  onChange={
+                    (event) => {
+                      setQuery(event.target.value);
+                    }
+                  }
                   type="text"
                   className="input"
                   placeholder="Search"
-                  value="qwe"
                 />
 
                 <span className="icon is-left">
@@ -81,11 +96,19 @@ export const App = () => {
 
                 <span className="icon is-right">
                   {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
-                  <button
-                    data-cy="ClearButton"
-                    type="button"
-                    className="delete"
-                  />
+                  {
+                    query
+                    && (
+                      <button
+                        data-cy="ClearButton"
+                        onClick={() => {
+                          setQuery('');
+                        }}
+                        type="button"
+                        className="delete"
+                      />
+                    )
+                }
                 </span>
               </p>
             </div>
@@ -134,6 +157,10 @@ export const App = () => {
             <div className="panel-block">
               <a
                 data-cy="ResetAllButton"
+                onClick={() => {
+                  setOwner('All');
+                  setQuery('');
+                }}
                 href="#/"
                 className="button is-link is-outlined is-fullwidth"
               >
@@ -144,87 +171,100 @@ export const App = () => {
         </div>
 
         <div className="box table-container">
-          <p data-cy="NoMatchingMessage">
-            No products matching selected criteria
-          </p>
+          {visibleProducts.length === 0
+            ? (
+              <p data-cy="NoMatchingMessage">
+                No products matching selected criteria
+              </p>
+            )
+            : (
+              <table
+                data-cy="ProductTable"
+                className="table is-striped is-narrow is-fullwidth"
+              >
+                <thead>
+                  <tr>
+                    <th>
+                      <span className="is-flex is-flex-wrap-nowrap">
+                        ID
 
-          <table
-            data-cy="ProductTable"
-            className="table is-striped is-narrow is-fullwidth"
-          >
-            <thead>
-              <tr>
-                <th>
-                  <span className="is-flex is-flex-wrap-nowrap">
-                    ID
-
-                    <a href="#/">
-                      <span className="icon">
-                        <i data-cy="SortIcon" className="fas fa-sort" />
+                        <a href="#/">
+                          <span className="icon">
+                            <i data-cy="SortIcon" className="fas fa-sort" />
+                          </span>
+                        </a>
                       </span>
-                    </a>
-                  </span>
-                </th>
+                    </th>
 
-                <th>
-                  <span className="is-flex is-flex-wrap-nowrap">
-                    Product
+                    <th>
+                      <span className="is-flex is-flex-wrap-nowrap">
+                        Product
 
-                    <a href="#/">
-                      <span className="icon">
-                        <i data-cy="SortIcon" className="fas fa-sort-down" />
+                        <a href="#/">
+                          <span className="icon">
+                            <i
+                              data-cy="SortIcon"
+                              className="fas fa-sort-down"
+                            />
+                          </span>
+                        </a>
                       </span>
-                    </a>
-                  </span>
-                </th>
+                    </th>
 
-                <th>
-                  <span className="is-flex is-flex-wrap-nowrap">
-                    Category
+                    <th>
+                      <span className="is-flex is-flex-wrap-nowrap">
+                        Category
 
-                    <a href="#/">
-                      <span className="icon">
-                        <i data-cy="SortIcon" className="fas fa-sort-up" />
+                        <a href="#/">
+                          <span className="icon">
+                            <i data-cy="SortIcon" className="fas fa-sort-up" />
+                          </span>
+                        </a>
                       </span>
-                    </a>
-                  </span>
-                </th>
+                    </th>
 
-                <th>
-                  <span className="is-flex is-flex-wrap-nowrap">
-                    User
+                    <th>
+                      <span className="is-flex is-flex-wrap-nowrap">
+                        User
 
-                    <a href="#/">
-                      <span className="icon">
-                        <i data-cy="SortIcon" className="fas fa-sort" />
+                        <a href="#/">
+                          <span className="icon">
+                            <i data-cy="SortIcon" className="fas fa-sort" />
+                          </span>
+                        </a>
                       </span>
-                    </a>
-                  </span>
-                </th>
-              </tr>
-            </thead>
+                    </th>
+                  </tr>
+                </thead>
 
-            <tbody>
-              {visibleProducts.map(product => (
-                <tr data-cy="Product">
-                  <td className="has-text-weight-bold" data-cy="ProductId">
-                    {product.id}
-                  </td>
+                <tbody>
+                  { visibleProducts.map(product => (
+                    <Fragment key={product.id}>
+                      <tr data-cy="Product">
+                        <td
+                          className="has-text-weight-bold"
+                          data-cy="ProductId"
+                        >
+                          {product.id}
+                        </td>
 
-                  <td data-cy="ProductName">{product.name}</td>
-                  <td data-cy="ProductCategory">{`${product.category.icon} - ${product.category.title}`}</td>
+                        <td data-cy="ProductName">{product.name}</td>
+                        <td data-cy="ProductCategory">{`${product.category.icon} - ${product.category.title}`}</td>
 
-                  <td
-                    data-cy="ProductUser"
-                    className={classNames('has-text-link',
-                      { 'has-text-danger': product.owner.sex === 'f' })}
-                  >
-                    {product.owner.name}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                        <td
+                          data-cy="ProductUser"
+                          className={classNames('has-text-link',
+                            { 'has-text-danger': product.owner.sex === 'f' })}
+                        >
+                          {product.owner.name}
+                        </td>
+                      </tr>
+                    </Fragment>
+                  ))}
+                </tbody>
+              </table>
+            )
+          }
         </div>
       </div>
     </div>
